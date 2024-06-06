@@ -1,0 +1,16 @@
+# python==3.12
+
+# good decorators implementation
+tenacity
+magentic
+
+# ml project
+scikit-learn
+skrub
+
+# huggingface
+transformers
+diffusers[torch]
+datasets
+peft
+timm # image model
