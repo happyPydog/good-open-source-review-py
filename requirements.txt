@@ -4,9 +4,18 @@
 tenacity
 magentic
 
+# general
+requests
+rich
+tqdm
+
 # ml project
 scikit-learn
 skrub
+
+# dl project
+tensorflow
+torch
 
 # huggingface
 transformers
