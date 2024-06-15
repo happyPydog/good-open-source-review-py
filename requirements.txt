@@ -12,10 +12,12 @@ tqdm
 # ml project
 scikit-learn
 skrub
+optuna
 
 # dl project
 tensorflow
 torch
+lightning
 
 # huggingface
 transformers
