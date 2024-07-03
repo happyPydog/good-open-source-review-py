@@ -19,6 +19,7 @@ scikit-learn = "^1.5.1"
 skrub = "^0.2.0"
 optuna = "^3.6.1"
 xgboost = "^2.1.0"
+plotly = "^5.22.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.2"

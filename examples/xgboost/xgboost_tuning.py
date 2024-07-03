@@ -35,6 +35,8 @@ def get_titanic_dataset():
 
 @mlflow_run(run_name="training")
 def main():
+    run = mlflow.active_run()
+    print(f"{run.info.run_id = }")
 
     X, y = get_titanic_dataset()
 
@@ -52,14 +54,19 @@ def main():
         y_eval=y_test,
     )
 
-    tuner.tune()
+    tuner.tune(n_trials=1)
 
     model = xgb.XGBClassifier(
         **tuner.best_params,
-        callbacks=[ClassifierMetricsCallback(X_test, y_test)],
+        callbacks=[ClassifierMetricsCallback(X_test, y_test, run=run)],
         early_stopping_rounds=5,
     )
-    model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
+    model.fit(
+        X_train,
+        y_train,
+        eval_set=[(X_train, y_train), (X_test, y_test)],
+        verbose=False,
+    )
 
     y_pred_proba = model.predict_proba(X_test)[:, 1]
     y_pred = model.predict(X_test)
