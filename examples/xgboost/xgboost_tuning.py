@@ -32,38 +32,21 @@ def get_titanic_dataset():
     return X, y
 
 
-class MlflowCommonMetricsCallback(xgb.callback.TrainingCallback):
+class CommonMetricsCallback(xgb.callback.TrainingCallback):
     """Compute common metrics after each iteration."""
 
     def __init__(self, X, y) -> None:
-        self.X = X
+        self.X = xgb.DMatrix(X)
         self.y = y
-        self.metrics = {
-            "accuracy": [],
-            "precision": [],
-            "recall": [],
-            "f1": [],
-            "roc_auc": [],
-            "pr_auc": [],
-            "log_loss": [],
-        }
 
     def after_iteration(
         self, model: xgb.Booster, epoch: int, evals_log: dict[str, dict]
     ) -> bool:
-        y_pred = model.predict(self.X)
-        y_pred_proba = model.predict_proba(self.X)[:, 1]
+        y_pred_proba = model.predict(self.X)
+        y_pred = (y_pred_proba > 0.5).astype(int)
         metrics = common_metrics(self.y, y_pred, y_pred_proba)
-        metrics["log_loss"] = evals_log["train"]["logloss"][epoch]
-
-        for key, value in metrics.items():
-            self.metrics[key].append(value)
-            mlflow.log_metrics(metrics=self.metrics, step=epoch)
-
+        mlflow.log_metrics(metrics=metrics, step=epoch)
         return False
-
-    def get_metrics(self):
-        return self.metrics
 
 
 @mlflow_run(run_name="training")
@@ -89,9 +72,10 @@ def main():
 
     model = xgb.XGBClassifier(
         **tuner.best_params,
-        callbacks=[MlflowCommonMetricsCallback(X_train, y_train)],
+        callbacks=[CommonMetricsCallback(X_train, y_train)],
+        early_stopping_rounds=5,
     )
-    model.fit(X_train, y_train)
+    model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
 
     y_pred_proba = model.predict_proba(X_test)[:, 1]
     y_pred = model.predict(X_test)
