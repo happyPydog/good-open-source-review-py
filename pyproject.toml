@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "mlfunctools"
+version = "0.0.0"
+description = "The mlfunctools build by Happydog."
+authors = ["Happydog <happydog0930@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "mlfunctools", from = "src" }]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 79
+
+[tool.isort]
+profile = "black"
+line_length = 79
+src_paths = ["src", "tests"]
+known_first_party = ["mlfunctools"]
+
+[tool.mypy]
+ignore_missing_imports = true
