@@ -12,7 +12,7 @@ from sklearn.preprocessing import LabelEncoder
 from mlfunctools.callback import ClassifierMetricsCallback, LogLossCallback
 from mlfunctools.metrics import classifier_metrics
 from mlfunctools.mlflow import mlflow_run
-from mlfunctools.tuner import XGBoostTuner
+from mlfunctools.tuner import XGBoostTuner, analysis_param
 
 
 def get_titanic_dataset():
@@ -54,7 +54,11 @@ def main():
         y_eval=y_test,
     )
 
-    tuner.tune(n_trials=1)
+    tuner.tune(n_trials=10)
+
+    analysis_param(tuner.study)
+
+    return
 
     model = xgb.XGBClassifier(
         **tuner.best_params,

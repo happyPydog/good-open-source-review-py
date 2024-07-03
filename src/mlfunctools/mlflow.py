@@ -3,6 +3,7 @@ import functools
 from typing import Any, Callable, ContextManager, ParamSpec, TypeVar, overload
 
 import mlflow
+import optuna
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -40,3 +41,9 @@ def mlflow_context_manager(run_name: str | None = None):
         yield run
     finally:
         mlflow.end_run()
+
+
+def log_hyperparam_analysis(
+    study: optuna.study.Study,
+    params: list[str] | None = None,
+) -> None: ...
