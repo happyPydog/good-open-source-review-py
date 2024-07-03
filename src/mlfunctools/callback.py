@@ -17,8 +17,6 @@ class LogLossCallback(xgb.callback.TrainingCallback):
         self.client = mlflow.tracking.MlflowClient()
         self.history: dict[str, list[float]] = collections.defaultdict(list)
 
-        super().__init__()
-
     def after_iteration(
         self, model: xgb.Booster, epoch: int, evals_log: dict[str, dict]
     ) -> bool:
