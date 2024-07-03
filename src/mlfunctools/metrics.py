@@ -8,7 +8,7 @@ from sklearn.metrics import (
 )
 
 
-def common_metrics(y_true, y_pred, y_pred_proba):
+def classifier_metrics(y_true, y_pred, y_pred_proba):
     return {
         "roc_auc": roc_auc_score(y_true, y_pred_proba),
         "pr_auc": average_precision_score(y_true, y_pred_proba),

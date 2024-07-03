@@ -6,7 +6,7 @@ import mlflow
 import optuna
 import xgboost as xgb
 
-from mlfunctools.metrics import common_metrics
+from mlfunctools.metrics import classifier_metrics
 
 
 class Tuner:
@@ -74,7 +74,7 @@ class XGBoostTuner(Tuner):
             y_pred = model.predict(self.X_eval)
 
             # compute metrics
-            metrics = common_metrics(self.y_eval, y_pred, y_pred_proba)
+            metrics = classifier_metrics(self.y_eval, y_pred, y_pred_proba)
 
             mlflow.log_params(params)
 

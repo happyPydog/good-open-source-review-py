@@ -9,7 +9,8 @@ from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
-from mlfunctools.metrics import common_metrics
+from mlfunctools.callback import ClassifierMetricsCallback
+from mlfunctools.metrics import classifier_metrics
 from mlfunctools.mlflow import mlflow_run
 from mlfunctools.tuner import XGBoostTuner
 
@@ -30,23 +31,6 @@ def get_titanic_dataset():
     for col in X.select_dtypes(include=["int64"]).columns:
         X[col] = X[col].astype("float64")
     return X, y
-
-
-class CommonMetricsCallback(xgb.callback.TrainingCallback):
-    """Compute common metrics after each iteration."""
-
-    def __init__(self, X, y) -> None:
-        self.X = xgb.DMatrix(X)
-        self.y = y
-
-    def after_iteration(
-        self, model: xgb.Booster, epoch: int, evals_log: dict[str, dict]
-    ) -> bool:
-        y_pred_proba = model.predict(self.X)
-        y_pred = (y_pred_proba > 0.5).astype(int)
-        metrics = common_metrics(self.y, y_pred, y_pred_proba)
-        mlflow.log_metrics(metrics=metrics, step=epoch)
-        return False
 
 
 @mlflow_run(run_name="training")
@@ -72,14 +56,14 @@ def main():
 
     model = xgb.XGBClassifier(
         **tuner.best_params,
-        callbacks=[CommonMetricsCallback(X_train, y_train)],
+        callbacks=[ClassifierMetricsCallback(X_test, y_test)],
         early_stopping_rounds=5,
     )
     model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
 
     y_pred_proba = model.predict_proba(X_test)[:, 1]
     y_pred = model.predict(X_test)
-    metrics = common_metrics(y_test, y_pred, y_pred_proba)
+    metrics = classifier_metrics(y_test, y_pred, y_pred_proba)
 
     mlflow.log_params(tuner.best_params)
     mlflow.log_metrics(metrics)
