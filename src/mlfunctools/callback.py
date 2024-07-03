@@ -8,8 +8,7 @@ import xgboost as xgb
 from mlfunctools.metrics import classifier_metrics
 
 
-class ClassifierMetricsCallback(xgb.callback.TrainingCallback):
-    """Log common classifier metrics after each iteration."""
+class LogLossCallback(xgb.callback.TrainingCallback):
 
     def __init__(self, X, y, run: mlflow.entities.Run) -> None:
         self.X = xgb.DMatrix(X)
@@ -23,13 +22,7 @@ class ClassifierMetricsCallback(xgb.callback.TrainingCallback):
     def after_iteration(
         self, model: xgb.Booster, epoch: int, evals_log: dict[str, dict]
     ) -> bool:
-        y_pred_proba = model.predict(self.X)
-        y_pred = (y_pred_proba > 0.5).astype(int)
-
-        # log common classifier metrics
-        metrics = classifier_metrics(self.y, y_pred, y_pred_proba)
-
-        # log loss
+        metrics = {}
         if "validation_0" in evals_log:
             metrics["train_logloss"] = evals_log["validation_0"]["logloss"][-1]
         if "validation_1" in evals_log:
@@ -46,16 +39,21 @@ class ClassifierMetricsCallback(xgb.callback.TrainingCallback):
         return model
 
     def _plot_training_loss(self):
+        if not self.history:
+            return
+
         fig = go.Figure()
 
-        fig.add_trace(
-            go.Scatter(
-                x=list(range(len(self.history["train_logloss"]))),
-                y=self.history["train_logloss"],
-                mode="lines+markers",
-                name="training_loss",
+        if "train_logloss" in self.history:
+
+            fig.add_trace(
+                go.Scatter(
+                    x=list(range(len(self.history["train_logloss"]))),
+                    y=self.history["train_logloss"],
+                    mode="lines+markers",
+                    name="training_loss",
+                )
             )
-        )
 
         if "eval_logloss" in self.history:
             fig.add_trace(
@@ -76,3 +74,22 @@ class ClassifierMetricsCallback(xgb.callback.TrainingCallback):
 
         fig_name = "training_loss.png"
         self.client.log_figure(self.run.info.run_id, fig, fig_name)
+
+
+class ClassifierMetricsCallback(xgb.callback.TrainingCallback):
+    """Log common classifier metrics after each iteration."""
+
+    def __init__(self, X, y) -> None:
+        self.X = xgb.DMatrix(X)
+        self.y = y
+
+    def after_iteration(
+        self, model: xgb.Booster, epoch: int, evals_log: dict[str, dict]
+    ) -> bool:
+        y_pred_proba = model.predict(self.X)
+        y_pred = (y_pred_proba > 0.5).astype(int)
+
+        metrics = classifier_metrics(self.y, y_pred, y_pred_proba)
+
+        mlflow.log_metrics(metrics=metrics, step=epoch)
+        return False

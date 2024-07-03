@@ -6,6 +6,7 @@ import mlflow
 import optuna
 import xgboost as xgb
 
+from mlfunctools.callback import LogLossCallback
 from mlfunctools.metrics import classifier_metrics
 
 
@@ -47,6 +48,7 @@ class XGBoostTuner(Tuner):
 
     def objective(self, trial: optuna.Trial) -> float:
         with mlflow.start_run(run_name=f"trial-{trial.number}", nested=True):
+            run = mlflow.active_run()
             params = {
                 "max_depth": trial.suggest_int("max_depth", 2, 10),
                 "n_estimators": trial.suggest_int("n_estimators", 50, 1500),
@@ -65,7 +67,10 @@ class XGBoostTuner(Tuner):
                 "reg_lambda": trial.suggest_float("reg_lambda", 0.0, 1.0),
             }
 
-            model = xgb.XGBClassifier(**params)
+            model = xgb.XGBClassifier(
+                **params,
+                callbacks=[LogLossCallback(self.X_eval, self.y_eval, run=run)],
+            )
 
             model.fit(self.X, self.y, eval_set=self.eval_set, verbose=False)
 

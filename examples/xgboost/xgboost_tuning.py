@@ -9,7 +9,7 @@ from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
-from mlfunctools.callback import ClassifierMetricsCallback
+from mlfunctools.callback import ClassifierMetricsCallback, LogLossCallback
 from mlfunctools.metrics import classifier_metrics
 from mlfunctools.mlflow import mlflow_run
 from mlfunctools.tuner import XGBoostTuner
@@ -58,7 +58,10 @@ def main():
 
     model = xgb.XGBClassifier(
         **tuner.best_params,
-        callbacks=[ClassifierMetricsCallback(X_test, y_test, run=run)],
+        callbacks=[
+            ClassifierMetricsCallback(X_test, y_test),
+            LogLossCallback(X_test, y_test, run=run),
+        ],
         early_stopping_rounds=5,
     )
     model.fit(
