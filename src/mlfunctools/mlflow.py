@@ -1,13 +1,6 @@
 import contextlib
 import functools
-from typing import (
-    Any,
-    Callable,
-    ParamSpec,
-    TypeVar,
-    ContextManager,
-    overload,
-)
+from typing import Any, Callable, ContextManager, ParamSpec, TypeVar, overload
 
 import mlflow
 
