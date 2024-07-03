@@ -26,6 +26,10 @@ class Tuner:
         return self
 
     @property
+    def best_trial(self) -> optuna.trial.FrozenTrial:
+        return self.study.best_trial
+
+    @property
     def best_params(self) -> dict:
         return self.study.best_params
 
