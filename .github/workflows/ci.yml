@@ -23,7 +23,9 @@ jobs:
         with:
           version: 1.8.0
       - name: Install dependencies
-        run: make install
+        run: |
+        make install
+        pip install -U kaleido
       - name: Check lint
         run: make lint
       - name: Run test
