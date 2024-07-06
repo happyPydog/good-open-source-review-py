@@ -1,6 +1,7 @@
 """Hyperparameter tuning module."""
 
-from typing import Callable, Self
+from collections import Counter
+from typing import Any, Self
 
 import mlflow
 import optuna
@@ -19,8 +20,9 @@ from optuna.visualization import (  # plot_intermediate_values, # ! Need to setu
 
 from mlfunctools.callback import LogLossCallback
 from mlfunctools.metrics import classifier_metrics
+from mlfunctools.types import ArrayLike, OptunaCallbackFuncType
 
-vis_funcs = {
+vis_funcs: dict[str, Any] = {
     "plot_contour": plot_contour,
     "plot_edf": plot_edf,
     # "plot_intermediate_values": plot_intermediate_values, # ! Need to setup pruning feature, so comment out
@@ -54,9 +56,19 @@ class Tuner:
         """Objective function to optimize."""
         raise NotImplementedError
 
-    def tune(self, n_trials: int = 10, timeout: int = 60) -> Self:
+    def tune(
+        self,
+        n_trials: int = 10,
+        timeout: int = 60,
+        callbacks: list[OptunaCallbackFuncType] | None = None,
+    ) -> Self:
         """Tunes parameters of the XGBoost model."""
-        self.study.optimize(self.objective, n_trials=n_trials, timeout=timeout)
+        self.study.optimize(
+            self.objective,
+            n_trials=n_trials,
+            timeout=timeout,
+            callbacks=callbacks,
+        )
         return self
 
     @property
@@ -75,7 +87,14 @@ class Tuner:
 class XGBoostTuner(Tuner):
     """XGBoost hyperparameter tuner."""
 
-    def __init__(self, X, y, X_eval, y_eval, seed: int = 42) -> None:
+    def __init__(
+        self,
+        X: ArrayLike,
+        y: ArrayLike,
+        X_eval: ArrayLike,
+        y_eval: ArrayLike,
+        seed: int = 42,
+    ) -> None:
         super().__init__(seed=seed)
         self.X = X
         self.y = y
@@ -123,10 +142,15 @@ class XGBoostTuner(Tuner):
 
         return metrics["pr_auc"]
 
+    @property
+    def prevalence_pos_label(self) -> float:
+        counter: Counter = Counter(self.y)
+        return counter[1] / len(self.y)
+
 
 def analysis_param(
     study: optuna.study.Study,
-    vis_funcs: dict[str, Callable[..., go.Figure]] = vis_funcs,
+    vis_funcs: dict[str, Any] = vis_funcs,
     params: list[str] | None = None,
     display: bool = True,
 ) -> list[go.Figure]:

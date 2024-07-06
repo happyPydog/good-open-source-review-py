@@ -9,10 +9,14 @@ from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
-from mlfunctools.callback import ClassifierMetricsCallback, LogLossCallback
+from mlfunctools.callback import (
+    ClassifierMetricsCallback,
+    LogLossCallback,
+    OptunaCheckPointCallback,
+)
 from mlfunctools.metrics import classifier_metrics
 from mlfunctools.mlflow import mlflow_run
-from mlfunctools.tuner import XGBoostTuner, analysis_param
+from mlfunctools.tuner import XGBoostTuner
 
 
 def get_titanic_dataset():
@@ -33,6 +37,9 @@ def get_titanic_dataset():
     return X, y
 
 
+n_trials = 1
+
+
 @mlflow_run(run_name="training")
 def main():
     run = mlflow.active_run()
@@ -41,7 +48,7 @@ def main():
     X, y = get_titanic_dataset()
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.1, random_state=42, stratify=y
+        X, y, test_size=0.2, random_state=42, stratify=y
     )
     print(
         f"{X_train.shape = }, {X_test.shape = }, {y_train.shape = }, {y_test.shape = }"
@@ -54,16 +61,17 @@ def main():
         y_eval=y_test,
     )
 
-    tuner.tune(n_trials=10)
-
-    analysis_param(tuner.study)
-
-    return
+    tuner.tune(
+        n_trials=n_trials,
+        callbacks=[
+            OptunaCheckPointCallback(n_trials=n_trials, recored_step=5)
+        ],
+    )
 
     model = xgb.XGBClassifier(
         **tuner.best_params,
         callbacks=[
-            ClassifierMetricsCallback(X_test, y_test),
+            ClassifierMetricsCallback(X_test, y_test, run=run),
             LogLossCallback(X_test, y_test, run=run),
         ],
         early_stopping_rounds=5,

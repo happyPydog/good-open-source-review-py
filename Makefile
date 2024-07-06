@@ -17,5 +17,5 @@ format:
 	poetry run black .
 
 lint:
-	poetry run flake8 src
+	poetry run flake8 src --ignore E501,W503,E704
 	poetry run mypy src
